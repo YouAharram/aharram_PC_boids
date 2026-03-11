@@ -1,7 +1,7 @@
 # Compilatore e Flag
 CC = gcc
-CFLAGS = -Wall -Wextra -Iinclude
-LDFLAGS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+CFLAGS = -Wall -Wextra -Iinclude -fopenmp
+LDFLAGS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -fopenmp
 
 # Flag per l'ottimizzazione (richiesti per i test di performance)
 RELEASE_FLAGS = -O3 -march=native

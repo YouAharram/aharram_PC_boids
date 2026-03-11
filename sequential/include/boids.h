@@ -13,6 +13,6 @@ typedef struct {
 
 // Funzioni per la versione sequenziale
 void init_boids(Boid* flock, int n);
-void update_boids_sequential(Boid* flock, int n);
+void update_boids_sequential(Boid* in, Boid* out, int n);
 
 #endif
