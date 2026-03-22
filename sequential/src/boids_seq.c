@@ -1,16 +1,5 @@
-#include "boids.h"
+#include "../include/boids.h"
 #include <math.h>
-
-// Parametri fisici (calibrabili)
-static const float visual_range = 40.0f;
-static const float visual_range_sq = 1600.0f;    // 40 * 40
-static const float protected_range_sq = 64.0f;  // 8 * 8
-static const float centering_factor = 0.0005f;
-static const float avoidfactor = 0.05f;
-static const float matching_factor = 0.05f;
-static const float maxspeed = 3.0f;
-static const float minspeed = 2.0f;
-static const float turnfactor = 0.2f;
 
 void update_boids_sequential(Boid* in, Boid* out, int n) {
     for (int i = 0; i < n; i++) {
@@ -34,16 +23,16 @@ void update_boids_sequential(Boid* in, Boid* out, int n) {
             float dy = boid_y - in[j].y;
 
             // Controllo rapido nel range visivo (bounding box)
-            if (fabsf(dx) < visual_range && fabsf(dy) < visual_range) {
+            if (fabsf(dx) < VISUAL_RANGE && fabsf(dy) < VISUAL_RANGE) {
                 float squared_distance = dx*dx + dy*dy;
 
                 // Regola 1: Separazione (Protected Range)
-                if (squared_distance < protected_range_sq) {
+                if (squared_distance < PROTECTED_RANGE_SQ) {
                     close_dx += boid_x - in[j].x;
                     close_dy += boid_y - in[j].y;
                 }
                 // Regole 2 e 3: Allineamento e Coesione (Visual Range)
-                else if (squared_distance < visual_range_sq) {
+                else if (squared_distance < VISUAL_RANGE_SQ) {
                     xpos_avg += in[j].x;
                     ypos_avg += in[j].y;
                     xvel_avg += in[j].vx;
@@ -64,32 +53,32 @@ void update_boids_sequential(Boid* in, Boid* out, int n) {
             xvel_avg /= neighboring_boids;
             yvel_avg /= neighboring_boids;
 
-            next_vx += (xpos_avg - boid_x) * centering_factor + 
-                       (xvel_avg - boid_vx) * matching_factor;
-            next_vy += (ypos_avg - boid_y) * centering_factor + 
-                       (yvel_avg - boid_vy) * matching_factor;
+            next_vx += (xpos_avg - boid_x) * CENTERING_FACTOR + 
+                       (xvel_avg - boid_vx) * MATCHING_FACTOR;
+            next_vy += (ypos_avg - boid_y) * CENTERING_FACTOR + 
+                       (yvel_avg - boid_vy) * MATCHING_FACTOR;
         }
 
         // Aggiunta forza di evitamento (Separazione)
-        next_vx += (close_dx * avoidfactor);
-        next_vy += (close_dy * avoidfactor);
+        next_vx += (close_dx * AVOID_FACTOR);
+        next_vy += (close_dy * AVOID_FACTOR);
 
         // --- GESTIONE BORDI (Box) ---
-        if (boid_y < 50)  next_vy += turnfactor;
-        if (boid_y > SCREEN_HEIGHT - 50) next_vy -= turnfactor;
-        if (boid_x < 50)  next_vx += turnfactor;
-        if (boid_x > SCREEN_WIDTH - 50)  next_vx -= turnfactor;
+        if (boid_y < 50)  next_vy += TURN_FACTOR;
+        if (boid_y > SCREEN_HEIGHT - 50) next_vy -= TURN_FACTOR;
+        if (boid_x < 50)  next_vx += TURN_FACTOR;
+        if (boid_x > SCREEN_WIDTH - 50)  next_vx -= TURN_FACTOR;
 
         // --- LIMITAZIONE VELOCITÀ ---
         float speed = sqrtf(next_vx * next_vx + next_vy * next_vy);
         if (speed > 0) { // Evitiamo divisione per zero
-            if (speed < minspeed) {
-                next_vx = (next_vx / speed) * minspeed;
-                next_vy = (next_vy / speed) * minspeed;
+            if (speed < BOID_MIN_SPEED) {
+                next_vx = (next_vx / speed) * BOID_MIN_SPEED;
+                next_vy = (next_vy / speed) * BOID_MIN_SPEED;
             }
-            if (speed > maxspeed) {
-                next_vx = (next_vx / speed) * maxspeed;
-                next_vy = (next_vy / speed) * maxspeed;
+            if (speed > BOID_MAX_SPEED) {
+                next_vx = (next_vx / speed) * BOID_MAX_SPEED;
+                next_vy = (next_vy / speed) * BOID_MAX_SPEED;
             }
         }
 
@@ -161,14 +150,14 @@ void update_boids_grid_sequential(Boid* in, Boid* out, int n, Cell (*grid)[GRID_
                         float dx = boid_x - in[j].x;
                         float dy = boid_y - in[j].y;
 
-                        if (fabsf(dx) < visual_range && fabsf(dy) < visual_range) {
+                        if (fabsf(dx) < VISUAL_RANGE && fabsf(dy) < VISUAL_RANGE) {
                             float squared_distance = dx*dx + dy*dy;
 
-                            if (squared_distance < protected_range_sq) {
+                            if (squared_distance < PROTECTED_RANGE_SQ) {
                                 close_dx += boid_x - in[j].x;
                                 close_dy += boid_y - in[j].y;
                             }
-                            else if (squared_distance < visual_range_sq) {
+                            else if (squared_distance < VISUAL_RANGE_SQ) {
                                 xpos_avg += in[j].x;
                                 ypos_avg += in[j].y;
                                 xvel_avg += in[j].vx;
@@ -191,27 +180,27 @@ void update_boids_grid_sequential(Boid* in, Boid* out, int n, Cell (*grid)[GRID_
             xvel_avg /= neighboring_boids;
             yvel_avg /= neighboring_boids;
 
-            next_vx += (xpos_avg - boid_x) * centering_factor + (xvel_avg - boid_vx) * matching_factor;
-            next_vy += (ypos_avg - boid_y) * centering_factor + (yvel_avg - boid_vy) * matching_factor;
+            next_vx += (xpos_avg - boid_x) * CENTERING_FACTOR + (xvel_avg - boid_vx) * MATCHING_FACTOR;
+            next_vy += (ypos_avg - boid_y) * CENTERING_FACTOR + (yvel_avg - boid_vy) * MATCHING_FACTOR;
         }
 
-        next_vx += (close_dx * avoidfactor);
-        next_vy += (close_dy * avoidfactor);
+        next_vx += (close_dx * AVOID_FACTOR);
+        next_vy += (close_dy * AVOID_FACTOR);
 
-        if (boid_y < 50) next_vy += turnfactor;
-        if (boid_y > SCREEN_HEIGHT - 50) next_vy -= turnfactor;
-        if (boid_x < 50) next_vx += turnfactor;
-        if (boid_x > SCREEN_WIDTH - 50) next_vx -= turnfactor;
+        if (boid_y < 50) next_vy += TURN_FACTOR;
+        if (boid_y > SCREEN_HEIGHT - 50) next_vy -= TURN_FACTOR;
+        if (boid_x < 50) next_vx += TURN_FACTOR;
+        if (boid_x > SCREEN_WIDTH - 50) next_vx -= TURN_FACTOR;
 
         float speed = sqrtf(next_vx * next_vx + next_vy * next_vy);
         if (speed > 0) {
-            if (speed < minspeed) {
-                next_vx = (next_vx / speed) * minspeed;
-                next_vy = (next_vy / speed) * minspeed;
+            if (speed < BOID_MIN_SPEED) {
+                next_vx = (next_vx / speed) * BOID_MIN_SPEED;
+                next_vy = (next_vy / speed) * BOID_MIN_SPEED;
             }
-            if (speed > maxspeed) {
-                next_vx = (next_vx / speed) * maxspeed;
-                next_vy = (next_vy / speed) * maxspeed;
+            if (speed > BOID_MAX_SPEED) {
+                next_vx = (next_vx / speed) * BOID_MAX_SPEED;
+                next_vy = (next_vy / speed) * BOID_MAX_SPEED;
             }
         }
 

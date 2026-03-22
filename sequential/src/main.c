@@ -5,14 +5,27 @@
 #include <math.h>   
 #include <omp.h>    
 #include "raylib.h"
-#include "boids.h"
+#include "../include/boids.h"
+#include <limits.h>
 
-void init_boids(Boid* flock, int n) {
+// --- funzione helper per generare float casuali deterministici ---
+static inline float rand_float_seq(unsigned int* state, float min, float max) {
+    // LCG semplice
+    *state = 1664525 * (*state) + 1013904223;
+    float t = (float)(*state & 0xFFFFFF) / (float)0x1000000;
+    return min + t * (max - min);
+}
+
+// --- inizializzazione boids sequenziale deterministica ---
+void init_boids(Boid* flock, int n, unsigned int seed) {
     for (int i = 0; i < n; i++) {
-        flock[i].x = (float)(GetRandomValue(100, SCREEN_WIDTH - 100));
-        flock[i].y = (float)(GetRandomValue(100, SCREEN_HEIGHT - 100));
-        flock[i].vx = (float)GetRandomValue(-200, 200) / 100.0f;
-        flock[i].vy = (float)GetRandomValue(-200, 200) / 100.0f;
+        // seed diverso per ogni boid, ma deterministico
+        unsigned int boid_seed = seed + i;
+
+        flock[i].x  = rand_float_seq(&boid_seed, 100.0f, SCREEN_WIDTH - 100.0f);
+        flock[i].y  = rand_float_seq(&boid_seed, 100.0f, SCREEN_HEIGHT - 100.0f);
+        flock[i].vx = rand_float_seq(&boid_seed, -2.0f, 2.0f); // equivalente a -200..200 /100
+        flock[i].vy = rand_float_seq(&boid_seed, -2.0f, 2.0f);
     }
 }
 
@@ -76,6 +89,7 @@ int main(int argc, char** argv) {
     int num_boids = 1000;
     int benchmark_mode = 0;
     int use_grid = 0;
+    unsigned int seed = 0;
 
     // Controllo argomenti
     for (int i = 1; i < argc; i++) {
@@ -83,7 +97,17 @@ int main(int argc, char** argv) {
             benchmark_mode = 1;
             if (i + 1 < argc && argv[i+1][0] != '-') num_boids = atoi(argv[++i]);
         }
-        if (strcmp(argv[i], "--grid") == 0) use_grid = 1;
+	else if (strcmp(argv[i], "--grid") == 0) { 
+		use_grid = 1;
+	}
+	else if (strcmp(argv[i], "--seed") == 0) {
+		if (i + 1 < argc) {
+			seed = (unsigned int)atoi(argv[++i]);
+		}
+	}
+	else if (argv[i][0] != '-'){
+		num_boids = atoi(argv[i]);
+	}
     }
 
     Boid *flock = malloc(sizeof(Boid) * num_boids);
@@ -98,7 +122,7 @@ int main(int argc, char** argv) {
     }
 
     srand(time(NULL));
-    init_boids(flock, num_boids);
+    init_boids(flock, num_boids, seed);
     memcpy(next_flock, flock, sizeof(Boid) * num_boids);
 
     if (benchmark_mode) {
