@@ -49,24 +49,23 @@ void pipeline_init(Pipeline* p, int n, int use_grid, unsigned int seed) {
     p->flock->n = n;
     p->next_flock->n = n;
 
-    p->flock->x  = malloc(sizeof(float) * n);
-    p->flock->y  = malloc(sizeof(float) * n);
-    p->flock->vx = malloc(sizeof(float) * n);
-    p->flock->vy = malloc(sizeof(float) * n);
-
-    p->next_flock->x  = malloc(sizeof(float) * n);
-    p->next_flock->y  = malloc(sizeof(float) * n);
-    p->next_flock->vx = malloc(sizeof(float) * n);
-    p->next_flock->vy = malloc(sizeof(float) * n);
+    p->flock->x  = aligned_alloc(64, sizeof(float) * n);
+    p->flock->y  = aligned_alloc(64, sizeof(float) * n);
+    p->flock->vx = aligned_alloc(64, sizeof(float) * n);
+    p->flock->vy = aligned_alloc(64, sizeof(float) * n);
+    
+    p->next_flock->x  = aligned_alloc(64, sizeof(float) * n);
+    p->next_flock->y  = aligned_alloc(64, sizeof(float) * n);
+    p->next_flock->vx = aligned_alloc(64, sizeof(float) * n);
+    p->next_flock->vy = aligned_alloc(64, sizeof(float) * n);
 
     // inizializzazione boids
     init_boids(p->flock, n, seed);
 
     // allocazione griglia
-    p->grid = malloc(sizeof(Cell) * GRID_ROWS * GRID_COLS);
+    p->grid = aligned_alloc(64, sizeof(Cell) * GRID_ROWS * GRID_COLS);
 
     atomic_store(&p->running, false);
-
     pthread_mutex_init(&p->mutex, NULL);
 }
 
@@ -86,6 +85,7 @@ void pipeline_stop(Pipeline* p) {
 void pipeline_cleanup(Pipeline* p) {
     if (!p) return;
 
+    // Free dei buffer SoA
     free(p->flock->x); free(p->flock->y);
     free(p->flock->vx); free(p->flock->vy);
 
@@ -95,6 +95,7 @@ void pipeline_cleanup(Pipeline* p) {
     free(p->flock);
     free(p->next_flock);
 
+    // Free griglia
     free(p->grid);
 
     pthread_mutex_destroy(&p->mutex);

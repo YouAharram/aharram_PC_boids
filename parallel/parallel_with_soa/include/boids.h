@@ -1,7 +1,7 @@
 #ifndef BOIDS_H
 #define BOIDS_H
 
-//    #include <omp.h>
+#include <stdatomic.h>
 
 
 #include <limits.h>   // per UINT_MAX
@@ -44,7 +44,8 @@ typedef struct {
 } Boids;
 
 typedef struct {
-    int count;
+    atomic_int count;
+    char pad[64];
     int boid_indices[MAX_BOIDS_PER_CELL];
 } Cell;
 
